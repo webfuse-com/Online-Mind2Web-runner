@@ -1,0 +1,3 @@
+[submodule "third_party/Online-Mind2Web"]
+	path = third_party/Online-Mind2Web
+	url = https://github.com/OSU-NLP-Group/Online-Mind2Web
