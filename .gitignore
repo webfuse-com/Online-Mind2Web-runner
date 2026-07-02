@@ -1,0 +1,11 @@
+__pycache__/
+.venv/
+venv/
+
+*.pyc
+*.jsonl
+
+.env
+
+trajectories/
+eval_output/
