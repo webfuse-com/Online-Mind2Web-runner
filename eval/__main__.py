@@ -1,4 +1,7 @@
-from .run import main
+#!/usr/bin/env python3
+
+
+from .runner import run
  
 if __name__ == "__main__":
-    main()
+    run()
