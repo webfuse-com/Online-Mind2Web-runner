@@ -26,7 +26,7 @@ else
 fi
 
 echo "Installing upstream evaluator deps..."
-pip install -r "$JUDGE_SUBMODULE_PATHs/requirements.txt"
+pip install -r "$JUDGE_SUBMODULE_PATH/requirements.txt"
 echo "Installing runner deps..."
 pip install -r requirements.txt
 

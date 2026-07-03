@@ -11,13 +11,12 @@ Runs the original _Online-Mind2Web_ _WebJudge_ evaluator on any web agent expose
 Create a `.env` file (compare `.env.example`). Required definitions:
 
 - `HF_TOKEN` – _Hugging Face_ dataset access token.
-- `AGENT_URL` – the evaluation target agent's HTTP(S) endpoint.
 - `JUDGE_API_KEY` – _OpenAI_ API key (used by _WebJudge_).
 
 ## Run
 
 ``` console
-python3 -m eval
+python3 -m eval --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
 ```
 
 > Run a mock agent to test the setup.

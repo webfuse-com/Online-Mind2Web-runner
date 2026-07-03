@@ -15,6 +15,7 @@ WebJudge expects:
 """
 
 
+import argparse
 import base64
 import io
 import json
@@ -48,25 +49,28 @@ def _env(key, default=None, cast=str, required=False):
     return cast(val)
 
 
+def _parse_args():
+    ap = argparse.ArgumentParser()
+
+    ap.add_argument("--agent-url", default=None)
+    ap.add_argument("--agent-key", default=None)
+    ap.add_argument("--agent-timeout", type=int, default=600)
+
+    return ap.parse_args()
+
+
+ARGS = _parse_args()
 CFG = dict(
     # Dataset (via Hugging Face)
-    hf_dataset=_env("HF_DATASET", "osunlp/Online-Mind2Web"),
-    hf_split=_env("HF_SPLIT", "train"),
-    hf_token=_env("HF_TOKEN"),
+    hf_dataset=_env("HUGGINGFACE_DATASET", "osunlp/Online-Mind2Web"),
+    hf_split=_env("HUGGINGFACE_SPLIT", "test"),
+    hf_token=_env("HUGGINGFACE_TOKEN"),
     max_tasks=_env("MAX_TASKS", 0, int),
-
     # Judge (evaluator) (via Online-Mind2Web submodule)
-    submodule_dir=_env("SUBMODULE_DIR",
-                       os.path.join(HERE, "third_party", "Online-Mind2Web")),
-    judge_model=_env("JUDGE_MODEL", "gpt-4o"),
-    judge_api_key=_env("JUDGE_API_KEY", required=True),
+    submodule_dir=_env("SUBMODULE_DIR", os.path.join(HERE, "third_party", "Online-Mind2Web")),
+    judge_llm=_env("JUDGE_LLM", "gpt-4o"),
+    judge_llm_api_key=_env("JUDGE_LLM_API_KEY", required=True),
     score_threshold=_env("SCORE_THRESHOLD", 3, int),
-
-    # Target web agent
-    agent_url=_env("AGENT_URL", required=True),
-    agent_api_key=_env("AGENT_API_KEY"),
-    agent_timeout=_env("AGENT_TIMEOUT", 900, int),
-
     # Runner
     num_workers=_env("NUM_WORKERS", 8, int),
     eval_workers=_env("EVAL_WORKERS", 0, int),
@@ -82,19 +86,18 @@ def call_agent(task):
     """POST the task + start URL to the agent; expect a v2 result object back."""
     headers = {"Content-Type": "application/json"}
 
-    if CFG["agent_api_key"]:
-        headers["Authorization"] = f"Bearer {CFG['agent_api_key']}"
+    if ARGS.agent_key:
+        headers["Authorization"] = f"Bearer {ARGS.agent_key}"
 
     body = {
         "task_id": task["task_id"],
-        "task": task["task_description"],
+        "task": task["confirmed_task"],
         "website": task["website"],
         "start_url": task["website"],   # alias
         "reference_length": task["reference_length"],
     }
 
-    r = requests.post(CFG["agent_url"], headers=headers, json=body,
-                      timeout=CFG["agent_timeout"])
+    r = requests.post(ARGS.agent_url, headers=headers, json=body, timeout=ARGS.agent_timeout)
     r.raise_for_status()
 
     return r.json()
@@ -133,7 +136,7 @@ def build_package(task, result):
 
     result = dict(result)
     result.setdefault("schema_version", "online-mind2web-v2")
-    result.setdefault("task", task["task_description"])
+    result.setdefault("task", task["confirmed_task"])
     result["task_id"] = tid
     result.setdefault("reference_length", task["reference_length"])
 
@@ -201,9 +204,9 @@ def run_upstream_eval(num_tasks):
     cmd = [
         sys.executable, run_py,
         "--mode", EVAL_MODE,
-        "--model", CFG["judge_model"],
+        "--model", CFG["judge_llm"],
         "--trajectories_dir", CFG["trajectories_dir"],
-        "--api_key", CFG["judge_api_key"],
+        "--api_key", CFG["judge_llm_api_key"],
         "--output_path", CFG["output_path"],
         "--score_threshold", str(CFG["score_threshold"]),
         "--num_worker", str(nw),
@@ -216,7 +219,7 @@ def run_upstream_eval(num_tasks):
 
 def summarize():
     """Read the JSONL the upstream evaluator wrote and print a success rate."""
-    fname = (f"{EVAL_MODE}_{CFG['judge_model']}"
+    fname = (f"{EVAL_MODE}_{CFG['judge_llm']}"
              f"_score_threshold_{CFG['score_threshold']}_auto_eval_results.json")
     path = os.path.join(CFG["output_path"], fname)
 

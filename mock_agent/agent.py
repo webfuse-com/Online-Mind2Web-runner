@@ -62,7 +62,7 @@ def _screenshot(lines):
 
 def _wait_ready(url, timeout=10.0):
     deadline = time.time() + timeout
-    health = url.rsplit("/run", 1)[0] + "/"
+    health = url.rsplit("/agent", 1)[0] + "/"
 
     while time.time() < deadline:
         try:
@@ -72,7 +72,7 @@ def _wait_ready(url, timeout=10.0):
         except Exception:  # noqa: BLE001
             time.sleep(0.1)
 
-    raise RuntimeError(f"mock agent did not become ready at {health}")
+    raise RuntimeError(f"Mock agent did not become ready at {health}")
 
 
 def build_result(req):
@@ -121,22 +121,6 @@ def make_server(host="127.0.0.1", port=8000, quiet=False):
 
     return ThreadingHTTPServer((host, port), handler)
 
-@contextlib.contextmanager
-def serve_background(host="127.0.0.1", port=8000, quiet=True):
-    srv = make_server(host, port, quiet=quiet)
-    t = threading.Thread(target=srv.serve_forever, daemon=True)
-    t.start()
-    url = f"http://{host}:{port}/run"
-
-    try:
-        _wait_ready(url)
-
-        yield url
-    finally:
-        srv.shutdown()
-        srv.server_close()
-        t.join(timeout=5)
-
 def run():
     ap = argparse.ArgumentParser()
     ap.add_argument("--host", default="127.0.0.1")
@@ -146,7 +130,7 @@ def run():
     args = ap.parse_args()
     srv = make_server(args.host, args.port, quiet=args.quiet)
 
-    print(f"Mock agent on http://{args.host}:{args.port}/run  (Ctrl-C to stop)")
+    print(f"Mock agent on http://{args.host}:{args.port}/agent")
 
     try:
         srv.serve_forever()
