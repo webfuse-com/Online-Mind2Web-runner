@@ -18,6 +18,7 @@ import base64
 import io
 import json
 import os
+import shutil
 import threading
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -50,6 +51,7 @@ def _parse_args():
     ap.add_argument("--agent-url", default=None)
     ap.add_argument("--agent-key", default=None)
     ap.add_argument("--agent-timeout", type=int, default=None)
+    ap.add_argument("--resume", action="store_true")
 
     return ap.parse_args()
 
@@ -181,6 +183,9 @@ def collect_task(task):
         return tid, str(e)
 
 def run():
+    if not ARGS.resume:
+        shutil.rmtree(CFG["trajectories_dir"], ignore_errors=True)
+
     ds = load_dataset(CFG["hf_dataset"], split=CFG["hf_split"], token=CFG["hf_token"])
     tasks = list(ds)
 

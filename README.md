@@ -20,7 +20,7 @@ Create a `.env` file (compare `.env.example`). Required definitions:
 ### 1. Run Agent on Dataset
 
 ``` console
-python3 -m agent_runner --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
+python3 -m agent_runner --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600] [--resume]
 ```
 
 > Run a mock agent to test the setup.
@@ -32,7 +32,7 @@ python3 -m agent_runner --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 6
 ### 2. Run Judge on Agent Results
 
 ``` console
-python3 -m judge_runner
+python3 -m judge_runner [--resume]
 ```
 
 ### 3. Analyze Judge Results

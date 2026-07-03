@@ -1,21 +1,18 @@
 """
 Judge runner (evaluation step).
-
 Reads submission packages from trajectories_dir:
-
 <trajectories_dir>/<task_id>/result.json
 <trajectories_dir>/<task_id>/trajectory/<nnnn>.png
-
 Writes the results to the results_dir:
-
 judge_results/ (default)
-
 Invokes the WebJudge_Online_Mind2Web_eval evaluator as-is.
 """
 
 
+import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -31,13 +28,25 @@ load_dotenv(os.path.join(HERE, ".env"))
 
 def _env(key, default=None, cast=str, required=False):
     val = os.getenv(key)
+
     if val is None or val == "":
         if required:
             raise SystemExit(f"Missing required env var: {key}")
+
         return default
+
     return cast(val)
 
 
+def _parse_args():
+    ap = argparse.ArgumentParser()
+
+    ap.add_argument("--resume", action="store_true")
+
+    return ap.parse_args()
+
+
+ARGS = _parse_args()
 CFG = dict(
     submodule_dir=_env("SUBMODULE_DIR", os.path.join(HERE, "third_party", "Online-Mind2Web")),
     judge_llm=_env("JUDGE_LLM", "gpt-4o"),
@@ -113,6 +122,9 @@ def run():
     if n_pkgs == 0:
         raise SystemExit(
             f"No trajectories found in {CFG['trajectories_dir']}. Run agent_runner first.")
+
+    if not ARGS.resume:
+        shutil.rmtree(CFG["output_path"], ignore_errors=True)
 
     run_upstream_eval(n_pkgs)
     summarize()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-from .analyzer import run
+from .judge_analysis import run
  
 if __name__ == "__main__":
     run()
