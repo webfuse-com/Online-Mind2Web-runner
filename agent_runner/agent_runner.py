@@ -72,27 +72,6 @@ CFG = dict(
 _lock = threading.Lock()
 
 
-def call_agent(task):
-    # POST the task + start URL to the agent; expect a v2 result object back.
-    headers = {"Content-Type": "application/json"}
-
-    if ARGS.agent_key:
-        headers["Authorization"] = f"Bearer {ARGS.agent_key}"
-
-    body = {
-        "task_id": task["task_id"],
-        "task": task["confirmed_task"],
-        "website": task["website"],
-        "start_url": task["website"],   # alias
-        "reference_length": task["reference_length"],
-    }
-
-    r = requests.post(ARGS.agent_url, headers=headers, json=body,
-                      timeout=ARGS.agent_timeout)
-    r.raise_for_status()
-
-    return r.json()
-
 def _screenshot_bytes(ref):
     if not ref:
         return None
@@ -117,6 +96,26 @@ def _screenshot_bytes(ref):
 
     return buf.getvalue()
 
+
+def call_agent(task):
+    # POST the task + start URL to the agent; expect a v2 result object back.
+    headers = {"Content-Type": "application/json"}
+
+    if ARGS.agent_key:
+        headers["Authorization"] = f"Bearer {ARGS.agent_key}"
+
+    body = {
+        "task_id": task["task_id"],
+        "task": task["confirmed_task"],
+        "website": task["website"],
+        "start_url": task["website"],   # alias
+        "reference_length": task["reference_length"],
+    }
+
+    r = requests.post(ARGS.agent_url, headers=headers, json=body, timeout=ARGS.agent_timeout)
+    r.raise_for_status()
+
+    return r.json()
 
 def build_package(task, result):
     tid = task["task_id"]
@@ -182,7 +181,15 @@ def collect_task(task):
 
         return tid, str(e)
 
+def check_agent_reachable():
+    try:
+        requests.get(ARGS.agent_url, timeout=10)
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(f"Agent at {ARGS.agent_url} is not reachable: {e}")
+
 def run():
+    check_agent_reachable()
+
     if not ARGS.resume:
         shutil.rmtree(CFG["trajectories_dir"], ignore_errors=True)
 
@@ -194,8 +201,7 @@ def run():
 
     os.makedirs(CFG["trajectories_dir"], exist_ok=True)
 
-    print(f"Collecting {len(tasks)} trajectories from agent "
-          f"(workers={CFG['num_workers']}) ...")
+    print(f"Collecting {len(tasks)} trajectories from agent (workers={CFG['num_workers']}) ...")
 
     ok, failed = 0, []
 
