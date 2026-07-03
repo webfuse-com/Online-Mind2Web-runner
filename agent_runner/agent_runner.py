@@ -30,6 +30,7 @@ from datasets import load_dataset
 from dotenv import load_dotenv
 
 
+EVAL_DATASET = "osunlp/Online-Mind2Web"
 PKG_DIR = os.path.dirname(os.path.abspath(__file__))
 HERE = os.path.dirname(PKG_DIR)
 
@@ -51,6 +52,7 @@ def _parse_args():
     ap.add_argument("--agent-url", default=None)
     ap.add_argument("--agent-key", default=None)
     ap.add_argument("--agent-timeout", type=int, default=None)
+    ap.add_argument("--tasks", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
 
     return ap.parse_args()
@@ -59,10 +61,8 @@ def _parse_args():
 ARGS = _parse_args()
 CFG = dict(
     # Dataset (via Hugging Face)
-    hf_dataset=_env("HUGGINGFACE_DATASET", "osunlp/Online-Mind2Web"),
     hf_split=_env("HUGGINGFACE_SPLIT", "test"),
     hf_token=_env("HUGGINGFACE_TOKEN"),
-    max_tasks=_env("MAX_TASKS", 0, int),
     # Runner
     num_workers=_env("NUM_WORKERS", 8, int),
     trajectories_dir=_env("TRAJECTORIES_DIR", os.path.join(HERE, "trajectories")),
@@ -193,11 +193,11 @@ def run():
     if not ARGS.resume:
         shutil.rmtree(CFG["trajectories_dir"], ignore_errors=True)
 
-    ds = load_dataset(CFG["hf_dataset"], split=CFG["hf_split"], token=CFG["hf_token"])
+    ds = load_dataset(EVAL_DATASET, split=CFG["hf_split"], token=CFG["hf_token"])
     tasks = list(ds)
 
-    if CFG["max_tasks"]:
-        tasks = tasks[: CFG["max_tasks"]]
+    if ARGS.tasks:
+        tasks = tasks[:ARGS.tasks]
 
     os.makedirs(CFG["trajectories_dir"], exist_ok=True)
 

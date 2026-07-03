@@ -1,6 +1,10 @@
 # Online-Mind2Web Runner
 
-[Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web) [WebJudge](https://github.com/OSU-NLP-Group/Online-Mind2Web) evaluation runner. Works with any HTTP-based web agent that implements the `online-mind2web-v2` request-reponse schema. Wraps the original dataset (Hugging Face) and judge implementation (GitHub).
+[Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web) [WebJudge](https://github.com/OSU-NLP-Group/Online-Mind2Web) evaluation runner.
+
+Works with any HTTP-based web agent that implements the Online-Mind2Web request-reponse schema.
+
+Pulls the latest dataset (Hugging Face) and runs the original judge implementation (GitHub).
 
 ## Setup
 
@@ -11,7 +15,7 @@
 Create a `.env` file (compare `.env.example`). Required definitions:
 
 - `HF_TOKEN` – Hugging Face dataset access token.
-- `JUDGE_API_KEY` – OpenAI API key (used by WebJudge).
+- `JUDGE_LLM_API_KEY` – OpenAI API key (used by WebJudge).
 
 ## Run
 
@@ -20,7 +24,10 @@ Create a `.env` file (compare `.env.example`). Required definitions:
 ### 1. Run Agent on Dataset
 
 ``` console
-python3 -m agent_runner --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600] [--resume]
+python3 -m agent_runner --agent-url <URL>
+  [--agent-key <KEY>] [--agent-timeout 600]
+  [--tasks <COUNT>]
+  [--resume]
 ```
 
 > Run a mock agent to test the setup.
@@ -41,9 +48,11 @@ python3 -m judge_runner [--resume]
 python3 -m judge_analysis [--json] [--out <path>]
 ```
 
-## Web Agent Adapter
+## Web Agent Interface
 
-### Input (POST Request)
+### Request `POST`
+
+> 🗎 &hairsp; [Dataset Entry Schema](https://huggingface.co/datasets/osunlp/Online-Mind2Web#data-fields)
 
 ``` ts
 interface Request.POST {
@@ -54,7 +63,9 @@ interface Request.POST {
 }
 ```
 
-### Output (Response)
+### Response
+
+> 🗎 &hairsp; [Agent Response Schema](https://github.com/OSU-NLP-Group/Online-Mind2Web/blob/main/data/schema_v2/schema_v2.json) `online-mind2web-v2`
 
 ``` ts
 // online-mind2web-v2
