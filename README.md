@@ -15,17 +15,25 @@ Create a `.env` file (compare `.env.example`). Required definitions:
 
 ## Run
 
-``` console
-python3 -m eval --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
-```
-
 > Run a mock agent to test the setup.
 > 
 > ``` console
 >  python3 -m mock_agent
 > ```
 
-By default, results are collected in `eval_result/` (upstream JSONL, one line per task with `predicted_label`) and `trajectories/<task_id>/` (the submission package sent to the judge: `result.json` and `trajectory/*.png`).
+### 1. Run Agent and Judge
+
+``` console
+python3 -m eval --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
+```
+
+### 2. Analyze Judge Results
+
+``` console
+python3 -m analyze
+```
+
+> By default, results are collected in `eval_result/` (upstream JSONL, one line per task with `predicted_label`) and `trajectories/<task_id>/` (the submission package sent to the judge: `result.json` and `trajectory/*.png`).
 
 ## Web Agent Adapter
 

@@ -169,6 +169,7 @@ def build_package(task, result):
 
     with open(os.path.join(tdir, "result.json"), "w") as f:
         json.dump(result, f)
+
     return tdir
 
 def collect_task(task):
@@ -195,8 +196,7 @@ def run_upstream_eval(num_tasks):
     run_py = os.path.join(CFG["submodule_dir"], "src", "run.py")
 
     if not os.path.exists(run_py):
-        raise SystemExit(
-            f"Submodule not found at {CFG['submodule_dir']}. Run ./setup_submodule.sh first.")
+        raise SystemExit(f"Submodule not found at {CFG['submodule_dir']}")
 
     nw = CFG["eval_workers"] or CFG["num_workers"]
     nw = max(1, min(nw, max(1, num_tasks)))
