@@ -1,6 +1,6 @@
 # Online-Mind2Web Runner
 
-Runs the original _Online-Mind2Web_ _WebJudge_ evaluator on any web agent exposed via HTTP(S).
+[Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web) [WebJudge](https://github.com/OSU-NLP-Group/Online-Mind2Web) evaluation runner. Works with any HTTP-based web agent that implements the `online-mind2web-v2` request-reponse schema. Wraps the original dataset (Hugging Face) and judge implementation (GitHub).
 
 ## Setup
 
@@ -10,8 +10,8 @@ Runs the original _Online-Mind2Web_ _WebJudge_ evaluator on any web agent expose
 
 Create a `.env` file (compare `.env.example`). Required definitions:
 
-- `HF_TOKEN` – _Hugging Face_ dataset access token.
-- `JUDGE_API_KEY` – _OpenAI_ API key (used by _WebJudge_).
+- `HF_TOKEN` – Hugging Face dataset access token.
+- `JUDGE_API_KEY` – OpenAI API key (used by WebJudge).
 
 ## Run
 
@@ -21,30 +21,38 @@ Create a `.env` file (compare `.env.example`). Required definitions:
 >  python3 -m mock_agent
 > ```
 
-### 1. Run Agent and Judge
+### 1. Run Agent on Dataset
 
 ``` console
-python3 -m eval --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
+python3 -m agent_runner --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
 ```
 
-### 2. Analyze Judge Results
+### 2. Run Judge on Agent Results
 
 ``` console
-python3 -m analyze
+python3 -m judge_runner
 ```
 
-> By default, results are collected in `eval_result/` (upstream JSONL, one line per task with `predicted_label`) and `trajectories/<task_id>/` (the submission package sent to the judge: `result.json` and `trajectory/*.png`).
+### 3. Analyze Judge Results
+
+``` console
+python3 -m judge_analyze
+```
 
 ## Web Agent Adapter
+
+### Input (POST Request)
 
 ``` ts
 interface Request.POST {
   "task_id": string,
   "task": string,
-  "website": string,        // URL
+  "website": string,  // URL
   "reference_length": number
 }
 ```
+
+### Output (Response)
 
 ``` ts
 // online-mind2web-v2
@@ -56,9 +64,9 @@ interface Response {
   "agent_final_answer": string,
   "action_history": {
     "step": number,
-    "screenshot": string,   // URL, data-URI, local path or Base64
+    "screenshot": string,  // URL, data-URI, local path or Base64
     "url": string,
-    "action": string,       // e.g., "button -> CLICK"
+    "action": string,      // e.g., "button -> CLICK"
     "action_status"?: string,
     "thought": string
   }[]

@@ -21,7 +21,7 @@ def _env(key, default=None, cast=str):
 
 
 def default_results_path():
-    output_path = _env("OUTPUT_PATH", os.path.join(HERE, "eval_result"))
+    output_path = _env("OUTPUT_PATH", os.path.join(HERE, "judge_result"))
     judge_llm = _env("JUDGE_LLM", "gpt-4o")
     score_threshold = _env("SCORE_THRESHOLD", 3, int)
 

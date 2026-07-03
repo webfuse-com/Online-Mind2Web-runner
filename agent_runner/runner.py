@@ -1,11 +1,9 @@
 """
-Lean Online-Mind2Web evaluation runner.
+Agent runner (collection step).
 
 1. Pulls the Online-Mind2Web dataset from Hugging Face.
 2. POST each dataset task to the agent (independent contexts).
-3. Runs the original WebJudge on reported results.
-
-WebJudge expects:
+3. Writes each response as a submission package:
 
 <trajectories_dir>/<task_id>/result.json
 <trajectories_dir>/<task_id>/trajectory/<nnnn>.png
@@ -20,8 +18,6 @@ import base64
 import io
 import json
 import os
-import subprocess
-import sys
 import threading
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -33,7 +29,6 @@ from datasets import load_dataset
 from dotenv import load_dotenv
 
 
-EVAL_MODE = "WebJudge_Online_Mind2Web_eval"
 PKG_DIR = os.path.dirname(os.path.abspath(__file__))
 HERE = os.path.dirname(PKG_DIR)
 
@@ -54,7 +49,7 @@ def _parse_args():
 
     ap.add_argument("--agent-url", default=None)
     ap.add_argument("--agent-key", default=None)
-    ap.add_argument("--agent-timeout", type=int, default=600)
+    ap.add_argument("--agent-timeout", type=int, default=None)
 
     return ap.parse_args()
 
@@ -66,16 +61,9 @@ CFG = dict(
     hf_split=_env("HUGGINGFACE_SPLIT", "test"),
     hf_token=_env("HUGGINGFACE_TOKEN"),
     max_tasks=_env("MAX_TASKS", 0, int),
-    # Judge (evaluator) (via Online-Mind2Web submodule)
-    submodule_dir=_env("SUBMODULE_DIR", os.path.join(HERE, "third_party", "Online-Mind2Web")),
-    judge_llm=_env("JUDGE_LLM", "gpt-4o"),
-    judge_llm_api_key=_env("JUDGE_LLM_API_KEY", required=True),
-    score_threshold=_env("SCORE_THRESHOLD", 3, int),
     # Runner
     num_workers=_env("NUM_WORKERS", 8, int),
-    eval_workers=_env("EVAL_WORKERS", 0, int),
     trajectories_dir=_env("TRAJECTORIES_DIR", os.path.join(HERE, "trajectories")),
-    output_path=_env("OUTPUT_PATH", os.path.join(HERE, "eval_result")),
 )
 
 
@@ -83,7 +71,7 @@ _lock = threading.Lock()
 
 
 def call_agent(task):
-    """POST the task + start URL to the agent; expect a v2 result object back."""
+    # POST the task + start URL to the agent; expect a v2 result object back.
     headers = {"Content-Type": "application/json"}
 
     if ARGS.agent_key:
@@ -97,7 +85,8 @@ def call_agent(task):
         "reference_length": task["reference_length"],
     }
 
-    r = requests.post(ARGS.agent_url, headers=headers, json=body, timeout=ARGS.agent_timeout)
+    r = requests.post(ARGS.agent_url, headers=headers, json=body,
+                      timeout=ARGS.agent_timeout)
     r.raise_for_status()
 
     return r.json()
@@ -169,7 +158,6 @@ def build_package(task, result):
 
     with open(os.path.join(tdir, "result.json"), "w") as f:
         json.dump(result, f)
-
     return tdir
 
 def collect_task(task):
@@ -191,56 +179,6 @@ def collect_task(task):
             print(f"[collect] {tid} FAILED: {e}")
 
         return tid, str(e)
-
-def run_upstream_eval(num_tasks):
-    run_py = os.path.join(CFG["submodule_dir"], "src", "run.py")
-
-    if not os.path.exists(run_py):
-        raise SystemExit(f"Submodule not found at {CFG['submodule_dir']}")
-
-    nw = CFG["eval_workers"] or CFG["num_workers"]
-    nw = max(1, min(nw, max(1, num_tasks)))
-
-    cmd = [
-        sys.executable, run_py,
-        "--mode", EVAL_MODE,
-        "--model", CFG["judge_llm"],
-        "--trajectories_dir", CFG["trajectories_dir"],
-        "--api_key", CFG["judge_llm_api_key"],
-        "--output_path", CFG["output_path"],
-        "--score_threshold", str(CFG["score_threshold"]),
-        "--num_worker", str(nw),
-    ]
-    safe = [("***" if cmd[i - 1] == "--api_key" else c) for i, c in enumerate(cmd)]
-
-    print(f"\n[eval] invoking upstream WebJudge as-is:\n  {' '.join(safe)}\n")
-
-    subprocess.run(cmd, check=True)
-
-def summarize():
-    """Read the JSONL the upstream evaluator wrote and print a success rate."""
-    fname = (f"{EVAL_MODE}_{CFG['judge_llm']}"
-             f"_score_threshold_{CFG['score_threshold']}_auto_eval_results.json")
-    path = os.path.join(CFG["output_path"], fname)
-
-    if not os.path.exists(path):
-        print(f"[warn] no upstream results file at {path}")
-
-        return
-
-    labels = []
-
-    with open(path) as f:
-        for line in f:
-            try:
-                labels.append(int(json.loads(line)["predicted_label"]))
-            except Exception:  # noqa: BLE001
-                pass
-
-    if labels:
-        print(f"\nWebJudge success rate: {100.0 * sum(labels) / len(labels):.1f}% "
-              f"({sum(labels)}/{len(labels)})")
-        print(f"Per-task details: {path}")
 
 def run():
     ds = load_dataset(CFG["hf_dataset"], split=CFG["hf_split"], token=CFG["hf_token"])
@@ -278,8 +216,7 @@ def run():
         if os.path.exists(os.path.join(CFG["trajectories_dir"], d, "result.json"))
     )
 
-    if n_pkgs == 0:
-        raise SystemExit("No trajectories to evaluate.")
+    print(f"Trajectories directory now has {n_pkgs} package(s): {CFG['trajectories_dir']}")
 
-    run_upstream_eval(n_pkgs)
-    summarize()
+    if n_pkgs == 0:
+        raise SystemExit("No trajectories collected.")
