@@ -132,6 +132,7 @@ def _parse_args():
     ap.add_argument("path", nargs="?", default=None, help="Path to the upstream auto_eval_results.json (JSONL).")
     ap.add_argument("--json", action="store_true", help="Print metrics as JSON instead of a text report.")
     ap.add_argument("--verbose", action="store_true", help="List failed task_ids with their reason.")
+    ap.add_argument("--out", default=None, help="Also write the output to this file.")
 
     return ap.parse_args()
 
@@ -144,8 +145,10 @@ def run():
         raise SystemExit(f"No results file at {path}")
 
     metrics = compute_metrics(load_results(path))
+    output = json.dumps(metrics, indent=2) if args.json else format_report(metrics, path, verbose=args.verbose)
 
-    if args.json:
-        print(json.dumps(metrics, indent=2))
-    else:
-        print(format_report(metrics, path, verbose=args.verbose))
+    print(output)
+
+    if args.out:
+        with open(args.out, "w") as f:
+            f.write(output + "\n")

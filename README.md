@@ -38,7 +38,7 @@ python3 -m judge_runner [--resume]
 ### 3. Analyze Judge Results
 
 ``` console
-python3 -m judge_analysis
+python3 -m judge_analysis [--json] [--out <path>]
 ```
 
 ## Web Agent Adapter
