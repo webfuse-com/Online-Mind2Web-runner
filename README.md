@@ -15,17 +15,19 @@ Create a `.env` file (compare `.env.example`). Required definitions:
 
 ## Run
 
-> Run a mock agent to test the setup.
-> 
-> ``` console
->  python3 -m mock_agent
-> ```
+<a href="#run"><img src="./.github/routine.svg" height="160"></a>
 
 ### 1. Run Agent on Dataset
 
 ``` console
 python3 -m agent_runner --agent-url <URL> [--agent-key <KEY>] [--agent-timeout 600]
 ```
+
+> Run a mock agent to test the setup.
+> 
+> ``` console
+>  python3 -m mock_agent
+> ```
 
 ### 2. Run Judge on Agent Results
 
@@ -36,7 +38,7 @@ python3 -m judge_runner
 ### 3. Analyze Judge Results
 
 ``` console
-python3 -m judge_analyze
+python3 -m judge_analysis
 ```
 
 ## Web Agent Adapter
