@@ -39,7 +39,9 @@ python3 -m agent_runner --agent-url <URL>
 ### 2. Run Judge on Agent Results
 
 ``` console
-python3 -m judge_runner [--resume]
+python3 -m judge_runner
+  [--trajectories <TRAJECTORIES_DIR=./trajectories>]
+  [--resume]
 ```
 
 ### 3. Analyze Judge Results

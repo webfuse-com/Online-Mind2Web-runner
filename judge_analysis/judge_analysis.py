@@ -14,6 +14,18 @@ load_dotenv(os.path.join(HERE, ".env"))
 
 EVAL_MODE = "WebJudge_Online_Mind2Web_eval"
 
+def _parse_args():
+    ap = argparse.ArgumentParser()
+
+    ap.add_argument("path", nargs="?", default=None, help="Path to the upstream auto_eval_results.json (JSONL).")
+    ap.add_argument("--json", action="store_true", help="Print metrics as JSON instead of a text report.")
+    ap.add_argument("--verbose", action="store_true", help="List failed task_ids with their reason.")
+    ap.add_argument("--out", default=None, help="Also write the output to this file.")
+
+    return ap.parse_args()
+
+ARGS = _parse_args()
+
 
 def _env(key, default=None, cast=str):
     val = os.getenv(key)
@@ -126,29 +138,18 @@ def format_report(metrics, path, verbose=False):
     return "\n".join(lines)
 
 
-def _parse_args():
-    ap = argparse.ArgumentParser()
-
-    ap.add_argument("path", nargs="?", default=None, help="Path to the upstream auto_eval_results.json (JSONL).")
-    ap.add_argument("--json", action="store_true", help="Print metrics as JSON instead of a text report.")
-    ap.add_argument("--verbose", action="store_true", help="List failed task_ids with their reason.")
-    ap.add_argument("--out", default=None, help="Also write the output to this file.")
-
-    return ap.parse_args()
-
 
 def run():
-    args = _parse_args()
-    path = args.path or default_results_path()
+    path = ARGS.path or default_results_path()
 
     if not os.path.exists(path):
         raise SystemExit(f"No results file at {path}")
 
     metrics = compute_metrics(load_results(path))
-    output = json.dumps(metrics, indent=2) if args.json else format_report(metrics, path, verbose=args.verbose)
+    output = json.dumps(metrics, indent=2) if ARGS.json else format_report(metrics, path, verbose=ARGS.verbose)
 
     print(output)
 
-    if args.out:
-        with open(args.out, "w") as f:
+    if ARGS.out:
+        with open(ARGS.out, "w") as f:
             f.write(output + "\n")

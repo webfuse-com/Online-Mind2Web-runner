@@ -37,10 +37,10 @@ def _env(key, default=None, cast=str, required=False):
 
     return cast(val)
 
-
 def _parse_args():
     ap = argparse.ArgumentParser()
 
+    ap.add_argument("--trajectories", default="./trajectories")
     ap.add_argument("--resume", action="store_true")
 
     return ap.parse_args()
@@ -53,18 +53,17 @@ CFG = dict(
     judge_llm_api_key=_env("JUDGE_LLM_API_KEY", required=True),
     score_threshold=_env("SCORE_THRESHOLD", 3, int),
     eval_workers=_env("EVAL_WORKERS", 8, int),
-    trajectories_dir=_env("TRAJECTORIES_DIR", os.path.join(HERE, "trajectories")),
     output_path=_env("OUTPUT_PATH", os.path.join(HERE, "judge_result")),
 )
 
 
 def count_packages():
-    if not os.path.isdir(CFG["trajectories_dir"]):
+    if not os.path.isdir(ARGS.trajectories):
         return 0
 
     return sum(
-        1 for d in os.listdir(CFG["trajectories_dir"])
-        if os.path.exists(os.path.join(CFG["trajectories_dir"], d, "result.json"))
+        1 for d in os.listdir(ARGS.trajectories)
+        if os.path.exists(os.path.join(ARGS.trajectories, d, "result.json"))
     )
 
 
@@ -81,7 +80,7 @@ def run_upstream_eval(num_tasks):
         sys.executable, run_py,
         "--mode", EVAL_MODE,
         "--model", CFG["judge_llm"],
-        "--trajectories_dir", CFG["trajectories_dir"],
+        "--trajectories_dir", ARGS.trajectories,
         "--api_key", CFG["judge_llm_api_key"],
         "--output_path", CFG["output_path"],
         "--score_threshold", str(CFG["score_threshold"]),
@@ -121,7 +120,7 @@ def run():
 
     if n_pkgs == 0:
         raise SystemExit(
-            f"No trajectories found in {CFG['trajectories_dir']}. Run agent_runner first.")
+            f"No trajectories found in {ARGS.trajectories}. Run agent_runner first.")
 
     if not ARGS.resume:
         shutil.rmtree(CFG["output_path"], ignore_errors=True)
