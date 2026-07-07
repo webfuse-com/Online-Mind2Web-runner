@@ -8,4 +8,4 @@ venv/
 .env
 
 trajectories/
-eval_result/
+judge_result/

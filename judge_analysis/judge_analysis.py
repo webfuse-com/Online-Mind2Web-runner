@@ -32,7 +32,7 @@ def _env(key, default=None, cast=str):
     return cast(val) if val else default
 
 
-def default_results_path():
+def default_runner_results_path():
     output_path = _env("OUTPUT_PATH", os.path.join(HERE, "judge_result"))
     judge_llm = _env("JUDGE_LLM", "gpt-4o")
     score_threshold = _env("SCORE_THRESHOLD", 3, int)
@@ -140,7 +140,7 @@ def format_report(metrics, path, verbose=False):
 
 
 def run():
-    path = ARGS.path or default_results_path()
+    path = ARGS.path or default_runner_results_path()
 
     if not os.path.exists(path):
         raise SystemExit(f"No results file at {path}")

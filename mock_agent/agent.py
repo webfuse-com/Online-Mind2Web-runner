@@ -77,7 +77,7 @@ def _wait_ready(url, timeout=10.0):
 
 def build_result(req):
     task = req.get("task", "")
-    start = req.get("website") or req.get("start_url") or "https://example.com"
+    start = req.get("website") or "https://example.com"
     answer = f"Completed (mock): {task}"
     steps = [
         {

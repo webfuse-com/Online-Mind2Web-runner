@@ -108,7 +108,6 @@ def call_agent(task):
         "task_id": task["task_id"],
         "task": task["confirmed_task"],
         "website": task["website"],
-        "start_url": task["website"],   # alias
         "reference_length": task["reference_length"],
     }
 

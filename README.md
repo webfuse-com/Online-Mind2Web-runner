@@ -30,6 +30,8 @@ python3 -m agent_runner --agent-url <URL>
   [--resume]
 ```
 
+> The agent key is provided as `Authorization: Bearer <KEY>` header.
+
 > Run a mock agent to test the setup.
 > 
 > ``` console
